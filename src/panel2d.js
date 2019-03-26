@@ -6,7 +6,7 @@ import {Mesh, BoxBufferGeometry, MeshLambertMaterial,
     BoxGeometry,
     Vector3, BackSide, Vector2,
     SphereGeometry,
-} from "../three/build/three.module.js"
+} from "../../three/build/three.module.js"
 
 
 import {POINTER_RELEASE, POINTER_CLICK, POINTER_ENTER, POINTER_EXIT, POINTER_PRESS, POINTER_MOVE} from '../../webxr-boilerplate/Pointer.js'
