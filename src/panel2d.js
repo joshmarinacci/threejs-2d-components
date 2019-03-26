@@ -6,18 +6,23 @@ import {Mesh, BoxBufferGeometry, MeshLambertMaterial,
     BoxGeometry,
     Vector3, BackSide, Vector2,
     SphereGeometry,
-} from "../node_modules/three/build/three.module.js"
+} from "../three/build/three.module.js"
 
 
-import {POINTER_RELEASE, POINTER_CLICK, POINTER_ENTER, POINTER_EXIT, POINTER_PRESS, POINTER_MOVE} from '../node_modules/webxr-boilerplate/Pointer.js'
+import {POINTER_RELEASE, POINTER_CLICK, POINTER_ENTER, POINTER_EXIT, POINTER_PRESS, POINTER_MOVE} from '../../webxr-boilerplate/Pointer.js'
 
 // const $ = (sel) => document.querySelector(sel)
 const on = (elem, type, cb) => elem.addEventListener(type,cb)
 // const toRad = (deg) => deg * Math.PI/180
 
 export default class Panel2D extends Object3D {
-    constructor(scene,camera) {
+    constructor(scene,camera, options) {
         super()
+
+        if(!options) options = {}
+        if(typeof options.draggable === 'undefined') options.draggable = true
+        if(!options.width) options.width = 256
+        if(!options.height) options.height = 512
 
         if(!scene) throw new Error("cannot pass empty scene to Panel2D()")
         if(!camera) throw new Error("cannot pass empty camera to Panel2D()")
@@ -26,17 +31,18 @@ export default class Panel2D extends Object3D {
         this.scene = scene
         this.camera = camera
         this.canvas = document.createElement('canvas')
-        this.canvas.width = 256
-        this.canvas.height = 512
+        this.canvas.width = options.width
+        this.canvas.height = options.height
+        console.log("using options",options)
         this.canvasTexture = new CanvasTexture(this.canvas)
         this.redrawHandler = (e) => this.redraw()
 
         const c = this.canvas.getContext('2d')
-        c.fillStyle = 'red'
+        c.fillStyle = 'white'
         c.fillRect(0,0,this.canvas.width,this.canvas.height)
 
         this.mesh = new Mesh(
-            new PlaneGeometry(1,2),
+            new PlaneGeometry(1,options.height/options.width),
             new MeshBasicMaterial({color:'white',map:this.canvasTexture})
         )
         this.mesh.userData.clickable = true
@@ -45,10 +51,11 @@ export default class Panel2D extends Object3D {
         this.add(this.mesh)
 
         let inside = null
-        on(this.mesh,POINTER_MOVE,(e)=>{
+
+        on(this.mesh, POINTER_MOVE, (e) => {
             const uv = e.intersection.uv
-            const fpt = new Vector2(uv.x*256, 512-uv.y*512)
-            if(inside && !inside.contains(fpt)) {
+            const fpt = new Vector2(uv.x * this.canvas.width, this.canvas.height - uv.y * this.canvas.height)
+            if (inside && !inside.contains(fpt)) {
                 inside.fire(POINTER_EXIT)
                 inside = null
             }
@@ -56,20 +63,20 @@ export default class Panel2D extends Object3D {
             // for(let i=0; i<this.comps.length; i++) {
             //     const comp = this.comps[i]
             //     if(comp.contains(fpt)) {
-            if(inside !== comp){
-                if(inside) inside.fire(POINTER_EXIT)
+            if (inside !== comp) {
+                if (inside) inside.fire(POINTER_EXIT)
                 inside = null
             }
-            if(comp) comp.fire(POINTER_ENTER)
+            if (comp) comp.fire(POINTER_ENTER)
             inside = comp
             // }
             // }
         })
-        on(this.mesh,POINTER_CLICK,(e)=>{
+        on(this.mesh, POINTER_CLICK, (e) => {
             const uv = e.intersection.uv
-            const fpt = new Vector2(uv.x*256, 512-uv.y*512)
+            const fpt = new Vector2(uv.x * this.canvas.width, this.canvas.height - uv.y * this.canvas.height)
             const comp = this.findAt(fpt)
-            if(comp) comp.fire(POINTER_CLICK)
+            if (comp) comp.fire(POINTER_CLICK)
             // for(let i=0; i<this.comps.length; i++) {
             //     const comp = this.comps[i]
             //     if(comp.contains(fpt)) {
@@ -78,17 +85,19 @@ export default class Panel2D extends Object3D {
             // }
         })
 
-        this.header = new Mesh(
-            new BoxGeometry(1.0,0.1,0.1),
-            new MeshBasicMaterial({color:'goldenrod'})
-        )
-        this.header.userData.clickable = true
-        this.header.position.set(0,1.1,0)
-        this.add(this.header)
+        if(options.draggable) {
+            this.header = new Mesh(
+                new BoxGeometry(1.0, 0.1, 0.1),
+                new MeshBasicMaterial({color: 'goldenrod'})
+            )
+            this.header.userData.clickable = true
+            this.header.position.set(0, 1.1, 0)
+            this.add(this.header)
 
-        on(this.header,POINTER_ENTER, e => this.header.material.color.set('yellow'))
-        on(this.header,POINTER_EXIT,  e => this.header.material.color.set('goldenrod'))
-        on(this.header,POINTER_PRESS, e => this.startDrag())
+            on(this.header, POINTER_ENTER, e => this.header.material.color.set('yellow'))
+            on(this.header, POINTER_EXIT, e => this.header.material.color.set('goldenrod'))
+            on(this.header, POINTER_PRESS, e => this.startDrag())
+        }
     }
 
     fire(type,payload) {
@@ -111,6 +120,24 @@ export default class Panel2D extends Object3D {
         } else {
             this.comps.push(comp)
             on(comp, 'changed', this.redrawHandler)
+            this.redraw()
+        }
+    }
+
+    removeAll() {
+        while(this.comps.length > 0) {
+            this.remove(this.comps.shift())
+        }
+    }
+
+    remove(comp) {
+        if(comp instanceof Object3D) {
+            super.remove(comp)
+        } else {
+            const n = this.comps.indexOf(comp)
+            if(n >= 0) this.comps.splice(n,1)
+            comp.removeEventListener('changed',this.redrawHandler)
+            this.redraw()
         }
     }
 

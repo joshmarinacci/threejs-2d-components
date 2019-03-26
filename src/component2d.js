@@ -15,6 +15,11 @@ export default class Component2D {
         this.listeners[type].push(cb)
         return this
     }
+    removeEventListener(type,cb) {
+        if(!this.listeners[type]) this.listeners[type] = []
+        const n = this.listeners[type].indexOf(cb)
+        if(n >= 0) this.listeners[type].splice(n,1)
+    }
     on(type,cb) {
         this.addEventListener(type,cb)
         return this

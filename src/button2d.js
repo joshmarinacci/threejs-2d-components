@@ -1,7 +1,7 @@
-
-import {POINTER_RELEASE, POINTER_CLICK, POINTER_ENTER, POINTER_EXIT, POINTER_PRESS, POINTER_MOVE} from '../node_modules/webxr-boilerplate/Pointer.js'
-
 import Component2D from "./component2d.js";
+
+import {POINTER_RELEASE, POINTER_CLICK, POINTER_ENTER, POINTER_EXIT, POINTER_PRESS, POINTER_MOVE} from '../../webxr-boilerplate/Pointer.js'
+
 
 
 export default class Button2D extends Component2D {

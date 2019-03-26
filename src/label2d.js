@@ -1,17 +1,15 @@
-export default class Label2D {
+import Component2D from './component2d.js'
+
+export default class Label2D extends Component2D {
     constructor() {
+        super()
         this.type = 'label'
         this.text = 'foo'
         this.fsize = 30
-        this.listeners = {}
         this.x = 0
         this.y = 0
         this.w = this.text.length*this.fsize
         this.h = 20
-    }
-    addEventListener(type,cb) {
-        if(!this.listeners[type]) this.listeners[type] = []
-        this.listeners[type].push(cb)
     }
     draw(ctx) {
         const metrics = ctx.measureText(this.text)
@@ -26,9 +24,5 @@ export default class Label2D {
     }
     findAt() {
         return null
-    }
-    set(key,value) {
-        this[key] = value
-        return this
     }
 }
